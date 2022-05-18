@@ -7,7 +7,7 @@ class VehicleDetection:
     _min_width_rectangle: int = 80
     _min_height_rectangle: int = 80
     _count_line_position: int = 550
-    _algo = field(init=False, repr=False)
+    _algo = None
 
     def __post_init__(self) -> None:
         self._algo = cv2.createBackgroundSubtractorMOG2(history=100, varThreshold=40)
@@ -19,10 +19,8 @@ class VehicleDetection:
         cy=y+y1
         return cx,cy
 
-    def detect(self, frame_list):
-        detect = []
-        offset = 6 #Alowable error b/w pixel
-        counter = 0
+    def detectByImage(self, frame_list):
+        cropped_vehicles = []
 
         for frame in frame_list:
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -43,23 +41,9 @@ class VehicleDetection:
                 val_counter = (w>=self._min_width_rectangle) and (h>= self._min_height_rectangle)
                 if not val_counter:
                     continue
-                cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,255),2)
 
+                cropped_vehicles.append(frame[x:y, (x+w, y+h)])
+        
+        #print(cropped_vehicles)
+        return cropped_vehicles
 
-                center = self.center_handle(x,y,w,h)
-                detect.append(center)
-                cv2.circle(frame, center, 4, (0,0,255), -1)
-
-                for (x,y) in detect:
-                    if y<(self._count_line_position + offset) and  y>(self._count_line_position - offset):
-                        counter+=1
-                        cv2.line(frame, (25,self._count_line_position),(1200,self._count_line_position),(0,127,255), 3)
-                        detect.remove((x,y))
-
-                        print("Vehicle No: "+ str(counter))
-                        
-            cv2.imshow('Detector',frame)
-
-
-            if cv2.waitKey(1) == ord('q'):
-                break
