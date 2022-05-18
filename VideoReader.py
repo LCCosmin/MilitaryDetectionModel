@@ -18,12 +18,12 @@ class VideoCapture:
         current_frame = 1
         frame_list = []
 
-        print(success)
         while success:
             if current_frame % self._frames_no == 0:
                 frame_list.append(frame)
-            
+
             current_frame += 1
             success, frame = video_capture.read()
 
+        video_capture.release()
         return frame_list

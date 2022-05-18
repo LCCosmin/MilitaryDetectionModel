@@ -42,8 +42,14 @@ class VehicleDetection:
                 if not val_counter:
                     continue
 
-                cropped_vehicles.append(frame[x:y, (x+w, y+h)])
+                if frame[x:y, (x+w, y+h)].any():
+                    cv2.imshow('q', frame[x:y, (x+w, y+h)])
+                    cropped_vehicles.append(frame[x:y, (x+w, y+h)])
+                    key = cv2.waitKey(1)
+                    if key==ord('q'):
+                        break
         
-        #print(cropped_vehicles)
+        cv2.destroyAllWindows()
+        print(cropped_vehicles)
         return cropped_vehicles
 

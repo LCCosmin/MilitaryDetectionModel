@@ -7,12 +7,12 @@ import numpy as np
 import cv2
 import os
 
-@dataclass(kw_only=True, frozen=True)
+@dataclass(kw_only=True)
 class MilitaryPersonnelModel:
-    _width_crop: int = 20
-    _height_crop: int = 40
-    _epochs_no: int = 128
-    _batch_size: int = 16
+    _width_crop: int = 30
+    _height_crop: int = 80
+    _epochs_no: int = 512
+    _batch_size: int = 128
     _checkpoint_path: str = field(init=False)
     _training_folder: str = field(init=False)
 
@@ -33,16 +33,16 @@ class MilitaryPersonnelModel:
     def create_model(self):
         model = tf.keras.models.Sequential([
             keras.layers.InputLayer(input_shape=(self._width_crop * self._height_crop,)),
-            keras.layers.Dense(32, activation = 'relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
+            keras.layers.Dense(400, activation = 'relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
             keras.layers.Dropout(0.1),
-            keras.layers.Dense(64, activation = 'relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
+            keras.layers.Dense(200, activation = 'relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
             keras.layers.Dropout(0.1),
-            keras.layers.Dense(128, activation = 'relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
+            keras.layers.Dense(100, activation = 'relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
             keras.layers.Dropout(0.1),
-            keras.layers.Dense(1024, activation = 'relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
+            keras.layers.Dense(50, activation = 'relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)),
             keras.layers.Dropout(0.1),
             
-            tf.keras.layers.Dense(2, activation = 'softmax')
+            keras.layers.Dense(2, activation = 'sigmoid')
             ])
         
         model.compile(optimizer = 'adam', 
@@ -54,9 +54,9 @@ class MilitaryPersonnelModel:
     def gather_training_data(self):
         x_load_images = []
         y_load_images = []
-        for filename in os.listdir(self.training_folder):
+        for filename in os.listdir(self._training_folder):
             #Read one image from folder
-            img = cv2.imread(os.path.join(self.training_folder,filename))
+            img = cv2.imread(os.path.join(self._training_folder,filename))
             if img is not None:
                 #Normalize all images to the same dimensions
                 img = self.normalize(img)
@@ -74,10 +74,10 @@ class MilitaryPersonnelModel:
         #Get the training data
         x_load_images = []
         y_load_images = []
-        
+
         x_load_images, y_load_images = self.gather_training_data()
 
-        x_personnel = np.array(x_load_images, dtype=(float))
+        x_personnel = np.array(x_load_images, dtype=(float)).reshape(-1, self._width_crop * self._height_crop)
         y_personnel = np.array(y_load_images, dtype=(int))
 
         x_train, x_test, y_train, y_test = train_test_split(x_personnel, y_personnel, 
@@ -86,15 +86,12 @@ class MilitaryPersonnelModel:
         tf.keras.utils.normalize(x_train, order=2)
         tf.keras.utils.normalize(x_test, order=2)
 
-        cp_callback = tf.keras.callbacks.ModelCheckpoint(self._checkpoint_path,
-                                                        save_weights_only=True,
-                                                        verbose = 1)
-
         model = self.create_model()
 
-        model.fit(x_train, y_train, epochs = self._epochs_no, batch_size = self._batch_size, callbacks = [cp_callback])
+        model.fit(x_train, y_train, epochs = self._epochs_no, batch_size = self._batch_size)
+        model.save_weights(self._checkpoint_path)
 
-        loss, accuracy = self.model.evaluate(x_test, y_test, verbose=2)
+        loss, accuracy = model.evaluate(x_test, y_test, verbose=2)
 
         print("Accuracy : " + str(accuracy))
 
@@ -102,9 +99,11 @@ class MilitaryPersonnelModel:
         model = self.create_model()
         model.load_weights(self._checkpoint_path)
 
-        for person in people_list:
-            person = self.normalize(person)
+        x_list = np.array(people_list, dtype=(float)).reshape(-1, self._width_crop * self._height_crop)
 
-        predictions = model.predict(people_list)
+        # for person in people_list:
+        #     person = self.normalize(person)
+
+        predictions = model.predict(x_list)
 
         print(predictions)

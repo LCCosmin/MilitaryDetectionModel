@@ -9,8 +9,8 @@ import os
 
 @dataclass(kw_only=True, frozen=True)
 class MilitaryVehicleModel:
-    _width_crop: int = 20
-    _height_crop: int = 40
+    _width_crop: int = 40
+    _height_crop: int = 20
     _epochs_no: int = 128
     _batch_size: int = 16
     _checkpoint_path: str = field(init=False)
