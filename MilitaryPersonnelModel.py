@@ -8,11 +8,11 @@ import cv2
 import os
 import matplotlib.pyplot as plt
 
-@dataclass(kw_only=True)
+@dataclass
 class MilitaryPersonnelModel:
     _width_crop: int = 30
     _height_crop: int = 80
-    _epochs_no: int = 64
+    _epochs_no: int = 80
     _batch_size: int = 16
     _checkpoint_path: str = field(init=False)
     _training_folder: str = field(init=False)
@@ -90,6 +90,8 @@ class MilitaryPersonnelModel:
         model.save_weights(self._checkpoint_path)
 
         loss, accuracy = model.evaluate(x_test, y_test, verbose=2)
+
+        print(model.predict(x_test)[0])
 
         plt.plot(history.history['loss'])
         plt.show(block=True)
