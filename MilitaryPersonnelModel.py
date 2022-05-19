@@ -6,13 +6,14 @@ from tensorflow import keras
 import numpy as np
 import cv2
 import os
+from time import sleep
 
 @dataclass(kw_only=True)
 class MilitaryPersonnelModel:
     _width_crop: int = 30
     _height_crop: int = 80
-    _epochs_no: int = 512
-    _batch_size: int = 128
+    _epochs_no: int = 64
+    _batch_size: int = 16
     _checkpoint_path: str = field(init=False)
     _training_folder: str = field(init=False)
 
@@ -25,7 +26,7 @@ class MilitaryPersonnelModel:
         img = cv2.GaussianBlur(img, (1,1), 0)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         
-        #img = img / 255
+        img = img / 255
         #img = cv2.Canny(img, 10, 255)
 
         return img
@@ -83,9 +84,6 @@ class MilitaryPersonnelModel:
         x_train, x_test, y_train, y_test = train_test_split(x_personnel, y_personnel, 
                                                             test_size = 0.2, shuffle=(True))
 
-        tf.keras.utils.normalize(x_train, order=2)
-        tf.keras.utils.normalize(x_test, order=2)
-
         model = self.create_model()
 
         model.fit(x_train, y_train, epochs = self._epochs_no, batch_size = self._batch_size)
@@ -97,13 +95,29 @@ class MilitaryPersonnelModel:
 
     def evaluate_frames(self, people_list) -> None:
         model = self.create_model()
-        model.load_weights(self._checkpoint_path)
+        model.load_weights(self._checkpoint_path).expect_partial()
 
         x_list = np.array(people_list, dtype=(float)).reshape(-1, self._width_crop * self._height_crop)
-
-        # for person in people_list:
-        #     person = self.normalize(person)
 
         predictions = model.predict(x_list)
 
         print(predictions)
+
+    def evaluate_image(self, image) -> None:
+        model = self.create_model()
+        model.load_weights(self._checkpoint_path).expect_partial()
+
+        n = 1
+
+        for person in image:
+            copy_image = person
+            person = self.normalize(person)
+            person = np.array(cv2.resize(person, (self._width_crop, self._height_crop)), dtype = float).reshape(-1, self._width_crop * self._height_crop)
+            
+            predictions = model.predict(person)
+            if predictions[0][0] > 0.5:
+                cv2.imwrite("./saves/persons/non-military/image{}.jpg".format(n), copy_image)
+            else:
+                cv2.imwrite("./saves/persons/military/image{}.jpg".format(n), copy_image)
+            n = n + 1
+            print(n)

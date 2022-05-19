@@ -5,6 +5,8 @@ import numpy as np
 
 @dataclass
 class HOG_HumanDetection:
+    _width_crop: int = 30
+    _height_crop: int = 80
     _HOGCV = None
 
     def __post_init__(self) -> None:
@@ -17,34 +19,30 @@ class HOG_HumanDetection:
         cropped_people = []
 
         for x,y,w,h in bounding_box_cordinates:
-            # print(x)
-            # print(y)
-            # print(w)
-            # print(h)
-            # print("------------------")
             cropped_people.append(frame[x:y, (x+w):(y+h)])
     
         return cropped_people
     
-    def detectByImage(self, frame_list):
+    def detectByVideo(self, frame_list):
         cropped_people = []
 
         for frame in frame_list:
-            #cv2.imshow('q', frame)
-            # print(frame.ndim)
-            # image = cv2.resize(frame, (min(800, frame.shape[1]), min(800, frame.shape[0])), interpolation = cv2.INTER_AREA) 
-            
             result_images = self.detect(frame)
             for people in result_images:
                 if people.any():
+                    #TO DO, same as in detect by image
+                    people = self.normalize(people)
                     people = np.array(cv2.resize(people, (30, 80)), dtype = float).reshape(-1, 30 * 80)
                     cropped_people.append(people)
 
-                    # cv2.imshow('q', people)
-                    # key = cv2.waitKey(1)
-                    # if key==ord('q'):
-                    #     break
-    
-        #print(cropped_people)
-        #cv2.destroyAllWindows()
+        return cropped_people
+
+    def detectByImage(self, image):
+        cropped_people = []
+        result_images = self.detect(image)
+        
+        for people in result_images:
+            if people.any():
+                cropped_people.append(people)
+
         return cropped_people
