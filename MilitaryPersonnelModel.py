@@ -8,7 +8,7 @@ import cv2
 import os
 import matplotlib.pyplot as plt
 
-@dataclass
+@dataclass(kw_only=True)
 class MilitaryPersonnelModel:
     _width_crop: int = 30
     _height_crop: int = 80
@@ -128,7 +128,7 @@ class MilitaryPersonnelModel:
             person = np.array(cv2.resize(person, (self._width_crop, self._height_crop)), dtype = float).reshape(-1, self._width_crop * self._height_crop)
             
             predictions = model.predict(person)
-            if predictions[0][0] > 0.5:
+            if predictions[0][0] <= 0.5:
                 cv2.imwrite("./saves/persons/non-military/image{}.jpg".format(n), copy_image)
             else:
                 cv2.imwrite("./saves/persons/military/image{}.jpg".format(n), copy_image)

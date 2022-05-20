@@ -50,9 +50,9 @@ class DeepFace_HumanDetection:
         cropped_bodies = []
         resp = RetinaFace.detect_faces(image)
         
-        if isinstance(keys, dict):
+        
+        if isinstance(resp, dict):
             keys = resp.keys()
-
             for key in keys:
                 try:
                     added_height = (resp[key]["facial_area"][3] - resp[key]["facial_area"][1]) * 5 + resp[key]["facial_area"][3]
