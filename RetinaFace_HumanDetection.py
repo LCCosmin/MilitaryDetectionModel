@@ -42,7 +42,7 @@ class RetinaFace_HumanDetection:
 
         return cropped_bodies
 
-    def detectByImage(self, image):
+    def detect_by_image(self, image):
         cropped_bodies = []
         resp = RetinaFace.detect_faces(image)
         
