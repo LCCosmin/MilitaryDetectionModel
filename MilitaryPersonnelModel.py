@@ -6,7 +6,7 @@ from tensorflow import keras
 import numpy as np
 import cv2
 import os
-from time import sleep
+import matplotlib.pyplot as plt
 
 @dataclass(kw_only=True)
 class MilitaryPersonnelModel:
@@ -86,10 +86,13 @@ class MilitaryPersonnelModel:
 
         model = self.create_model()
 
-        model.fit(x_train, y_train, epochs = self._epochs_no, batch_size = self._batch_size)
+        history = model.fit(x_train, y_train, epochs = self._epochs_no, batch_size = self._batch_size)
         model.save_weights(self._checkpoint_path)
 
         loss, accuracy = model.evaluate(x_test, y_test, verbose=2)
+
+        plt.plot(history.history['loss'])
+        plt.show(block=True)
 
         print("Accuracy : " + str(accuracy))
 
@@ -97,11 +100,19 @@ class MilitaryPersonnelModel:
         model = self.create_model()
         model.load_weights(self._checkpoint_path).expect_partial()
 
-        x_list = np.array(people_list, dtype=(float)).reshape(-1, self._width_crop * self._height_crop)
+        n = 1
 
-        predictions = model.predict(x_list)
-
-        print(predictions)
+        for person in people_list:
+            copy_image = person
+            person = self.normalize(person)
+            person = np.array(cv2.resize(person, (self._width_crop, self._height_crop)), dtype = float).reshape(-1, self._width_crop * self._height_crop)
+            
+            predictions = model.predict(person)
+            if predictions[0][0] > 0.5:
+                cv2.imwrite("./saves/persons/non-military/image-video{}.jpg".format(n), copy_image)
+            else:
+                cv2.imwrite("./saves/persons/military/image-video{}.jpg".format(n), copy_image)
+            n = n + 1
 
     def evaluate_image(self, image) -> None:
         model = self.create_model()
@@ -120,4 +131,3 @@ class MilitaryPersonnelModel:
             else:
                 cv2.imwrite("./saves/persons/military/image{}.jpg".format(n), copy_image)
             n = n + 1
-            print(n)

@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
-from deepface import DeepFace
 import cv2
 from time import sleep
+from numpy import isin
 from retinaface import RetinaFace
 
 @dataclass
@@ -19,35 +19,58 @@ class DeepFace_HumanDetection:
 
         return image
 
+    def detectByVideo(self, frames):
+        cropped_bodies = []
+        for frame in frames:
+            resp = RetinaFace.detect_faces(frame)
+
+            if isinstance(resp, dict):
+                keys = resp.keys()
+
+                for key in keys:
+                    try:
+                        added_height = (resp[key]["facial_area"][3] - resp[key]["facial_area"][1]) * 5 + resp[key]["facial_area"][3]
+                        extracted_width_left = resp[key]["facial_area"][0] - (resp[key]["facial_area"][2] - resp[key]["facial_area"][0])
+                        added_width_right = resp[key]["facial_area"][2] + (resp[key]["facial_area"][2] - resp[key]["facial_area"][0])
+
+                        if added_height >= frame.shape[0]:
+                            added_height = frame.shape[0] - 1
+                        if extracted_width_left < 1:
+                            extracted_width_left = 1
+                        if added_width_right >= frame.shape[1]:
+                            added_width_right = frame.shape[1] - 1
+
+                        cropped_bodies.append(frame[resp[key]["facial_area"][1]:added_height, extracted_width_left:added_width_right])
+                    except:
+                        print("Error when cropping the body")
+
+        return cropped_bodies
+
     def detectByImage(self, image):
-        # norm_image = self.part_normalize(image)
-
-        # faces = self._face_cascade.detectMultiScale(norm_image, 15, 3)
-
-        # cv2.imshow('test', image)
-        # for (x, y, w, h) in faces:
-        #     print("DA")
-        #     try:
-        #         crop_img = image[y:y+h, x:x+w]
-        #         cv2.imshow('test', crop_img)
-        #     except:
-        #         print("No face detected :(")
-            
-        #     sleep(10)
+        cropped_bodies = []
+        resp = RetinaFace.detect_faces(image)
         
-        # k = cv2.waitKey(30) & 0xff
-        # sleep(10)
+        if isinstance(keys, dict):
+            keys = resp.keys()
 
-        # cv2.destroyAllWindows()
+            for key in keys:
+                try:
+                    added_height = (resp[key]["facial_area"][3] - resp[key]["facial_area"][1]) * 5 + resp[key]["facial_area"][3]
+                    extracted_width_left = resp[key]["facial_area"][0] - (resp[key]["facial_area"][2] - resp[key]["facial_area"][0])
+                    added_width_right = resp[key]["facial_area"][2] + (resp[key]["facial_area"][2] - resp[key]["facial_area"][0])
 
-        resp = RetinaFace.detect_faces("img.png")
+                    if added_height >= image.shape[0]:
+                        added_height = image.shape[0] - 1
+                    if extracted_width_left < 1:
+                        extracted_width_left = 1
+                    if added_width_right >= image.shape[1]:
+                        added_width_right = image.shape[1] - 1
 
-        faces = RetinaFace.extract_faces(img_path = "img.png", align = True)
+                    cropped_bodies.append(image[resp[key]["facial_area"][1]:added_height, extracted_width_left:added_width_right])
+                except:
+                    print("Error when cropping the body")
+        else:
+            print("Couldn't detect any faces :(")
 
-        for face in faces:
-            cv2.imshow('q', face)
-            sleep(10)
-            k = cv2.waitKey(30) & 0xff
-        
-        cv2.destroyAllWindows()
+        return cropped_bodies
 
