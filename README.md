@@ -113,6 +113,11 @@ In the end, the accuracy of this test was around 87%, a bit higher than the trai
 You can check those results as well in the ZIP file that is uploaded to this git repository.
 
 
+# Requirements
+
+In order to be able to run this project you need to have Python 3.10+ and a GPU.
+
+
 # Setup
 
 1. Download the repository: `git clone https://github.com/LCCosmin/MilitaryDetectionModel.git`
